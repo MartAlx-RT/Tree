@@ -1,6 +1,8 @@
 #include "Tree.h"
 
-static tree_err_t _AddNode(node_t *node, tree_elem_t elem)
+
+
+tree_err_t AddNode(node_t *node, tree_elem_t elem)
 {
 	if(node == NULL)
 		return NODE_NULLPTR;
@@ -27,7 +29,7 @@ static tree_err_t _AddNode(node_t *node, tree_elem_t elem)
 			
 		}
 		else
-			err = _AddNode(node->left, elem);
+			err = AddNode(node->left, elem);
 	}
 	else
 	{
@@ -40,21 +42,13 @@ static tree_err_t _AddNode(node_t *node, tree_elem_t elem)
 			node->right->data = elem;
 		}
 		else
-			err = _AddNode(node->right, elem);
+			err = AddNode(node->right, elem);
 	}
 
 	return err;
 }
 
-tree_err_t AddNode(tree_t *tree, tree_elem_t elem)
-{
-	if(tree == NULL)
-		return TREE_NULLPTR;
-
-	return _AddNode(tree->node, elem);
-}
-
-static tree_err_t NodeDestroy(node_t *node)
+tree_err_t NodeDestroy(node_t *node)
 {
 	if(node == NULL)
 		return NODE_NULLPTR;
@@ -69,7 +63,10 @@ static tree_err_t NodeDestroy(node_t *node)
 
     tree_err_t err = TREE_NO_ERR;
 
-	node->data = TRASH;
+		free(node->data);
+		node->data = TRASH;
+
+	//node->data = TRASH;
 	
 	if(node->left)
 		err = NodeDestroy(node->left);
@@ -84,11 +81,62 @@ static tree_err_t NodeDestroy(node_t *node)
 	return err;
 }
 
-tree_err_t TreeDestroy(tree_t *tree)
+
+tree_err_t _TreeDestroyExt(node_t *tree, const char *buf, const size_t buf_size)
 {
 	if(tree == NULL)
-		return TREE_NULLPTR;
+		return NODE_NULLPTR;
 
-	return NodeDestroy(tree->node);
+	//tree->data = TRASH;
+	tree->parent = NULL;
+	
+	tree_err_t err = TREE_NO_ERR;
+	
+	if(buf == NULL || tree->data < buf || buf + buf_size < tree->data)
+	{
+		free(tree->data);
+		tree->data = TRASH;
+	}
+	else
+		tree->data = TRASH;
+
+	err = _TreeDestroyExt(tree->left, buf, buf_size);
+
+	err = _TreeDestroyExt(tree->right, buf, buf_size);
+
+	free(tree);
+
+	return err;
 }
 
+tree_err_t TreeDestroyExt(node_t *tree, const char *buf, const size_t buf_size)
+{
+	if(tree == NULL)
+		return NODE_NULLPTR;
+
+	//tree->data = TRASH;
+	tree->parent = NULL;
+	
+	tree_err_t err = TREE_NO_ERR;
+	
+	if(buf == NULL || tree->data < buf || buf + buf_size < tree->data)
+	{
+		free(tree->data);
+		tree->data = TRASH;
+	}
+	else
+		tree->data = TRASH;
+
+	err = _TreeDestroyExt(tree->left, buf, buf_size);
+
+	err = _TreeDestroyExt(tree->right, buf, buf_size);
+
+	return err;
+}
+
+
+
+tree_err_t TreeDestroy(node_t *tree)
+{
+	return TreeDestroyExt(tree, NULL, 0);
+}

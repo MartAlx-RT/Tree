@@ -3,48 +3,55 @@
 
 int main(void)
 {
-    tree_t tree = {};
+    node_t tree = {};
 
 	tree_err_t err = TREE_NO_ERR;
 
-	tree.node = (node_t *)calloc(1, sizeof(node_t));
-	tree.node->parent = tree.node;
-	
-	assert(tree.node);
+	char *curs = NULL;
 
-	AddNode(&tree, 10);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 10");
-	
-	AddNode(&tree, 5);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 5");
-	
-	AddNode(&tree, 20);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 20");
-	
-	AddNode(&tree, 3);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 3");
-	
-	AddNode(&tree, 7);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 7");
-	
-	AddNode(&tree, 15);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 15");
-	
-	AddNode(&tree, 13);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 13");
-	
-	AddNode(&tree, 16);
-	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "inserted 16");
+	long buf_size = ReadFileToBuf("dump.txt", &curs);
+	assert(curs);
+	assert(buf_size >= 0);
 
-	err = AddNode(&tree, 6);
-	printf("err = %d\n", err);
+	//printf("read it: {%s}\n", curs);
 
-	err = TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "after adding 6");
-	printf("err = %d\n", err);
+	tree.parent = &tree;
 
-	TreeDestroy(&tree);
+	ReadNode(curs, &tree);
+	TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "");
+	
+	//NewTree(&tree);
+	//TreeDumpHTML(&tree, "output.dot", "./Img", "DumpOutput.html", "hz");
 
-	//free(fre);
+	//tree_err_t err = TREE_NO_ERR;
 
+	char ans[11] = "";
+
+	while(1)
+	{
+		Play(&tree);
+		printf("Заново? [да или нет]: ");
+		scanf(" %10s", ans);
+		ClearBuffer();
+
+		if(strcmp(ans, "нет") == 0)
+		{
+			FILE *dump = fopen("dump.txt", "w");
+			assert(dump);
+
+			PrintTree(&tree, dump, PREORDER);
+			TreeDestroyExt(&tree, curs, (size_t)buf_size);
+			free(curs);
+			fclose(dump);
+			return 0;
+		}
+	}
+
+
+	//fclose(dump);
+	TreeDestroyExt(&tree, curs, (size_t)buf_size);
+	free(curs);
+
+	//fclose(dump);
 	return 0;
 }

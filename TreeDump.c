@@ -1,6 +1,6 @@
 #include "Tree.h"
 
-tree_err_t PrintNode(node_t *node, FILE *dump_file, const traversal_type_t traversal_type)
+tree_err_t PrintTree(node_t *node, FILE *dump_file, const traversal_type_t traversal_type)
 {
     static size_t call_count = 0;
     
@@ -21,21 +21,25 @@ tree_err_t PrintNode(node_t *node, FILE *dump_file, const traversal_type_t trave
     putc('(', dump_file);
     
     if(traversal_type == PREORDER)
-        fprintf(dump_file, MODE, node->data);
+        fprintf(dump_file, MODE_PRINT, node->data);
     
     if(node->left)
-        err = PrintNode(node->left, dump_file, traversal_type);
+        err = PrintTree(node->left, dump_file, traversal_type);
+	else
+		fprintf(dump_file, "(nil)");
 
-    if(traversal_type == INORDER)
-        fprintf(dump_file, MODE, node->data);
+	if(traversal_type == INORDER)
+        fprintf(dump_file, MODE_PRINT, node->data);
     
     TREE_OK_OR_LEAVE(err);
     
     if(node->right)
-        err = PrintNode(node->right, dump_file, traversal_type);
+        err = PrintTree(node->right, dump_file, traversal_type);
+	else
+		fprintf(dump_file, "(nil)");
 
     if(traversal_type == POSTORDER)
-        fprintf(dump_file, MODE, node->data);
+        fprintf(dump_file, MODE_PRINT, node->data);
 
     putc(')', dump_file);
 
@@ -53,14 +57,15 @@ tree_err_t PrintDiagraphNode(node_t *node, FILE *dot_file)
     if (node == NULL)
 	{
 		fprintf(dot_file, "NULL[shape=record, style=\"rounded, filled\", fillcolor=\"#e00808ff\"");
-        return TREE_NULLPTR;
+        return NODE_NULLPTR;
 	}
+	
     if(dot_file == NULL)
         return TREE_FILE_NULLPTR;
     
     if(node->parent == NULL)
 	{
-		fprintf(dot_file, "label%lu->NULL!!!(No_parent)\n", (size_t)node);
+		fprintf(dot_file, "label%lu->NULL\n", (size_t)node);
 		return TREE_PARENT_NULLPTR;
 	}
 
@@ -68,7 +73,7 @@ tree_err_t PrintDiagraphNode(node_t *node, FILE *dot_file)
 	
 	//if(node->parent != node)
 	fprintf(dot_file, "label%lu[shape=record, style=\"rounded, filled\", fillcolor=\"#a8daf0ff\", "
-	"label=\"{ node[%p] | " MODE " | prnt[%p] | { l[%p] | r[%p] }}\"];\n",
+	"label=\"{ node[%p] | " MODE_DUMP " | prnt[%p] | { l[%p] | r[%p] }}\"];\n",
 	(size_t)node, node, node->data, node->parent, node->left, node->right);
 	
 	if(node->left)
@@ -96,10 +101,10 @@ tree_err_t PrintDiagraphNode(node_t *node, FILE *dot_file)
 	return err;
 }
 
-tree_err_t CreateDigraph(tree_t *tree, const char *dot_file_path)
+tree_err_t CreateDigraph(node_t *node, const char *dot_file_path)
 {
-    if(tree == NULL)
-        return TREE_NULLPTR;
+    if(node == NULL)
+        return NODE_NULLPTR;
 
     assert(dot_file_path);
 
@@ -111,7 +116,7 @@ tree_err_t CreateDigraph(tree_t *tree, const char *dot_file_path)
     }
 
     fprintf(dot_file, "digraph Tree\n{\n");
-	tree_err_t err = PrintDiagraphNode(tree->node, dot_file);
+	tree_err_t err = PrintDiagraphNode(node, dot_file);
 	
 	
 
@@ -120,10 +125,10 @@ tree_err_t CreateDigraph(tree_t *tree, const char *dot_file_path)
 	return err;
 }
 
-tree_err_t TreeDumpHTML(tree_t *tree, const char *dot_file_path, const char *img_dir_path, const char *html_file_path, const char *caption)
+tree_err_t TreeDumpHTML(node_t *node, const char *dot_file_path, const char *img_dir_path, const char *html_file_path, const char *caption)
 {
-	if(tree == NULL)
-		return TREE_NULLPTR;
+	if(node == NULL)
+        return NODE_NULLPTR;
 	
 	if(dot_file_path == NULL || html_file_path == NULL || img_dir_path == NULL || caption == NULL)
 		return TREE_FILE_NULLPTR;
@@ -144,7 +149,7 @@ tree_err_t TreeDumpHTML(tree_t *tree, const char *dot_file_path, const char *img
 		printf("file(s) cannot be open\n");
 	}
 	
-    tree_err_t err = CreateDigraph(tree, dot_file_path);
+    tree_err_t err = CreateDigraph(node, dot_file_path);
 
     char system_msg[100] = "";
     snprintf(system_msg, 100, "dot %s -Tsvg -o %s/%lu.svg\n", dot_file_path, img_dir_path, dump_call_counter);
